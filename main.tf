@@ -1,4 +1,3 @@
-
 provider "azurerm" {
   features {}
 }
@@ -20,7 +19,7 @@ resource "azurerm_subnet" "subnet" {
   name                 = var.vnet_subnet_1["subnet_1_alpha"].name
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes       = var.vnet_subnet_1["subnet_1_alpha"].address_prefixes
+  address_prefixes     = var.vnet_subnet_1["subnet_1_alpha"].address_prefixes
 }
 
 resource "azurerm_network_interface" "nic" {
@@ -29,9 +28,9 @@ resource "azurerm_network_interface" "nic" {
   resource_group_name = azurerm_resource_group.rg.name
 
   ip_configuration {
-    name                          = "internal"
+    name                          = var.ip_configuration["ip-alpha"].name
     subnet_id                     = azurerm_subnet.subnet.id
-    private_ip_address_allocation = "Dynamic"
+    private_ip_address_allocation = var.ip_configuration["ip-alpha"].private_ip_address_allocation
   }
 }
 
@@ -72,10 +71,8 @@ resource "azurerm_network_security_group" "nsg1" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
-}
-
-resource "azurerm_network_security_rule" "nsr1" {
-  name                        = "ssh"
+security_rule {
+    name                        = "ssh"
   priority                    = 100
   direction                   = "Outbound"
   access                      = "Allow"
@@ -84,20 +81,10 @@ resource "azurerm_network_security_rule" "nsr1" {
   destination_port_range      = "22"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg1.name
 }
-
-resource "azurerm_network_security_group" "nsg2" {
-  name                = "nsg-2"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-
-}
-
-resource "azurerm_network_security_rule" "nsr2" {
-  name                        = "RDP"
-  priority                    = 100
+security_rule {
+    name                        = "RDP"
+  priority                    = 200
   direction                   = "Outbound"
   access                      = "Allow"
   protocol                    = "Tcp"
@@ -105,20 +92,10 @@ resource "azurerm_network_security_rule" "nsr2" {
   destination_port_range      = "3389"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg2.name
 }
-
-resource "azurerm_network_security_group" "nsg3" {
-  name                = "nsg-3"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-
-}
-
-resource "azurerm_network_security_rule" "nsr3" {
-  name                        = "http"
-  priority                    = 100
+security_rule {
+    name                        = "http"
+  priority                    = 300
   direction                   = "Outbound"
   access                      = "Allow"
   protocol                    = "Tcp"
@@ -126,6 +103,89 @@ resource "azurerm_network_security_rule" "nsr3" {
   destination_port_range      = "80"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg3.name
+    }
+}
+
+resource "azurerm_subnet_network_security_group_association" "trevasso1"{
+    subnet_id = azurerm_subnet.subnet.id
+    network_security_group_id = azurerm_network_security_group.nsg1.id
+}
+
+
+resource "azurerm_storage_account" "trestore1" {
+  name                     = "trevstore1"
+  resource_group_name      = azurerm_resource_group.rg.name
+  location                 = azurerm_resource_group.rg.location
+  account_tier             = "Standard"
+  account_replication_type = "GRS"
+
+}
+
+resource "azurerm_storage_container" "trevstorcontain" {
+  name                  = "trevcontain"
+  storage_account_name  = azurerm_storage_account.trestore1.name
+  container_access_type = "private"
+}
+
+resource "azurerm_frontdoor" "trevep1" {
+  name                                         = "trevep1"
+  location                                     = "Global"
+  resource_group_name                          = azurerm_resource_group.rg.name
+  enforce_backend_pools_certificate_name_check = false
+
+  routing_rule {
+    name               = "trevroute1"
+    accepted_protocols = ["Http", "Https"]
+    patterns_to_match  = ["/*"]
+    frontend_endpoints = ["trevep1"]
+    forwarding_configuration {
+      forwarding_protocol = "MatchRequest"
+      backend_pool_name   = "trevbe"
+    }
+  }
+
+  backend_pool_load_balancing {
+    name = "trevlb1"
+  }
+
+  backend_pool_health_probe {
+    name = "trevhp1"
+  }
+
+  backend_pool {
+    name = "trevbe"
+    backend {
+      host_header = "www.bing.com"
+      address     = "www.bing.com"
+      http_port   = 80
+      https_port  = 443
+    }
+
+    load_balancing_name = "trevlb1"
+    health_probe_name   = "trevhp1"
+  }
+
+  frontend_endpoint {
+    name      = "trevep1"
+    host_name = "trevep1.azurefd.net"
+  }
+}
+
+resource "azurerm_app_service_plan" "trevappservplan1" {
+  name                = "trevappserviceplan"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  sku {
+    tier = "Standard"
+    size = "S1"
+  }
+}
+
+resource "azurerm_app_service" "trevappserv1" {
+  name                = "trevappservice"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  app_service_plan_id = azurerm_app_service_plan.trevappservplan1.id
+
 }

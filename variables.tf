@@ -29,13 +29,20 @@ variable "vnet" {
 
 variable "vnet_subnet_1" {
   type = map(object({
-    name           = string
+    name             = string
     address_prefixes = list(string)
   }))
 }
 
 variable "nic" {
+  type = map(object({
+    name = string
+  }))
+}
+
+variable "ip_configuration" {
     type = map(object({
         name = string
+        private_ip_address_allocation = string
     }))
 }
