@@ -17,6 +17,20 @@ source "azure-arm" "first-pack-image"{
     location = "westus2"
     vm_size = "Standard_B2ms"
 
+    azure_tags = {
+        ApplicationName     = "ACETECHWEEK"
+      AppTypeRole         = "RG"
+      DataProtection      = "NotProtected"
+      DRTier              = "None"
+      Environment         = "ATS"
+      Location            = "USW2Z"
+      NotificationContact = "trevon.lawrence@cdw.com"
+      ProductCostCenter   = "ATS"
+      SupportResponseSLA  = "None"
+      WorkloadType        = "WebServer"
+      Owner               = "Trevon Lawrence"
+    }
+
 }
 
 build {
@@ -24,6 +38,7 @@ build {
 
     provisioner "shell" {
         inline = ["echo Mannnnnnnn"]
+
 }
 
 }
