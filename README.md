@@ -1,8 +1,4 @@
 <html>
-
-<style>
-</style>
-
 <body>
 
 <h1>First Terraform Lab</h1>
