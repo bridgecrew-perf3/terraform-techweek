@@ -13,13 +13,29 @@ resource "azurerm_virtual_network" "vnet" {
   address_space       = var.vnet["vnet_alpha"].address_space
   location            = var.vnet["vnet_alpha"].location
   resource_group_name = azurerm_resource_group.rg.name
+
+  dynamic "subnet" {
+      for_each = var.subnet
+
+      content {
+          name = subnet.value["name"]
+          address_prefix = subnet.value["address_prefix"]
+          security_group = azurerm_network_security_group.nsg1.id
+      }
+  }
 }
 
-resource "azurerm_subnet" "subnet" {
-  name                 = var.vnet_subnet_1["subnet_1_alpha"].name
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = var.vnet_subnet_1["subnet_1_alpha"].address_prefixes
+locals {
+    trevonssubnets = tolist(azurerm_virtual_network.vnet.subnet).0.id
+    moresubnets = [for obj in azurerm_virtual_network.vnet.subnet: obj.id]
+}
+
+output "trevsubs" {
+    value = local.trevonssubnets
+}
+
+output "moresubs" {
+    value = local.moresubnets
 }
 
 resource "azurerm_network_interface" "nic" {
@@ -29,7 +45,7 @@ resource "azurerm_network_interface" "nic" {
 
   ip_configuration {
     name                          = var.ip_configuration["ip-alpha"].name
-    subnet_id                     = azurerm_subnet.subnet.id
+    subnet_id                     = local.trevonssubnets
     private_ip_address_allocation = var.ip_configuration["ip-alpha"].private_ip_address_allocation
   }
 }
@@ -106,11 +122,6 @@ security_rule {
     }
 }
 
-resource "azurerm_subnet_network_security_group_association" "trevasso1"{
-    subnet_id = azurerm_subnet.subnet.id
-    network_security_group_id = azurerm_network_security_group.nsg1.id
-}
-
 
 resource "azurerm_storage_account" "trestore1" {
   name                     = "trevstore1"
@@ -129,7 +140,7 @@ resource "azurerm_storage_container" "trevstorcontain" {
 
 resource "azurerm_frontdoor" "trevep1" {
   name                                         = "trevep1"
-  location                                     = "Global"
+  location                                     = "global"
   resource_group_name                          = azurerm_resource_group.rg.name
   enforce_backend_pools_certificate_name_check = false
 

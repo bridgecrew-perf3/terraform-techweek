@@ -26,13 +26,6 @@ vnet = {
   }
 }
 
-vnet_subnet_1 = {
-  subnet_1_alpha = {
-    name             = "subnet_1"
-    address_prefixes = ["10.0.1.0/24"]
-  }
-}
-
 nic = {
   nic1 = {
     name = "nic1"
@@ -44,4 +37,21 @@ ip_configuration = {
         name = "internal"
         private_ip_address_allocation = "Dynamic"
 }
+}
+
+subnet = {
+    subnet_1 = {
+        name = "subnet_1"
+        address_prefix = "10.0.1.0/24"
+    }
+
+     subnet_2 = {
+        name = "subnet_2"
+        address_prefix = "10.0.2.0/24"
+    }
+
+     subnet_3 = {
+        name = "subnet_3"
+        address_prefix = "10.0.3.0/24"
+    }
 }
